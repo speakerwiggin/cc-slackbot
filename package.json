@@ -1,0 +1,27 @@
+{
+  "name": "cc-slackbot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/speakerwiggin/cc-slackbot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/speakerwiggin/cc-slackbot/issues"
+  },
+  "homepage": "https://github.com/speakerwiggin/cc-slackbot#readme",
+  "dependencies": {
+    "request": "^2.83.0",
+    "request-promise": "^4.2.2",
+    "slackbots": "^1.1.0",
+    "socket.io-client": "^1.4.6",
+    "textspark": "^0.1.0"
+  }
+}
+
