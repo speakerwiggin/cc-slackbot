@@ -146,11 +146,12 @@ ${coin1.cap24hrChange >= 0 ? ':chart_with_upwards_trend:' : ':chart_with_downwar
 }
 
 function postVerboseMessage (coin, channel = defaultChannelName, params = defaultParams) {
+  const loss = /-/.test(coin.cap24hrChange)
   params = Object.assign({}, params, {
     attachments: [
       {
-        //"color": "#36a64f",
-        pretext: `${capitalize(coin.long)} (${coin.short.toUpperCase()}) [Rank #${coin.rank} @ coincap.io]`,
+        "color": loss ? '#ff0000' : '#00ff00',
+        pretext: `<coincap.io/${coin.short.toUpperCase()} | ${capitalize(coin.long)}> (${coin.short.toUpperCase()}) [Rank #${coin.rank} @ coincap.io]`,
         fields: [
           {
             title: 'Price',
@@ -164,7 +165,7 @@ function postVerboseMessage (coin, channel = defaultChannelName, params = defaul
           },
           {
             title: '24hr Change',
-            value: `${/-/.test(coin.cap24hrChange) ? coin.cap24hrChange : '+' + coin.cap24hrChange}%`,
+            value: `${loss ? coin.cap24hrChange : '+' + coin.cap24hrChange}%`,
             short: true
           },
           {
