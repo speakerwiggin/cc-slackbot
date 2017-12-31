@@ -151,7 +151,7 @@ function postVerboseMessage (coin, channel = defaultChannelName, params = defaul
     attachments: [
       {
         "color": loss ? '#ff0000' : '#00ff00',
-        pretext: `<coincap.io/${coin.short.toUpperCase()} | ${capitalize(coin.long)}> (${coin.short.toUpperCase()}) [Rank #${coin.rank} @ coincap.io]`,
+        pretext: `<http://coincap.io/${coin.short.toUpperCase()} | ${capitalize(coin.long)}> (${coin.short.toUpperCase()}) [Rank #${coin.rank} @ coincap.io]`,
         fields: [
           {
             title: 'Price',
