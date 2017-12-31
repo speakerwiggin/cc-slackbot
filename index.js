@@ -24,9 +24,16 @@ const defaultParams = {
   icon_emoji: ':coincap:'
 }
 
-const commands = `Here are the commands: 
+const commands = `*All commands can be started with either \`coincap\` or \`cc\`*
+Here are the commands:   
     coincap help
-    coincap show [coin symbol, ex: btc]
+    coincap [coin]
+    coincap show [coin, ex: btc, :btc:, bitcoin]
+    coincap show [coin1] in [coin2]
+    
+Flags:
+    cc -v [coin]    verbose output
+    cc -r [rank]    get coin at specified rank
 `
 
 /**
@@ -56,7 +63,20 @@ bot.on('message', (data) => {
   if (arg1 !== 'coincap' && arg1 !== 'cc') return
   console.log(args)
 
-  if (args.length === 0) return showCoin(command.toLowerCase())
+  if (/bee+s+h+/i.test(command)) return showCoin('bch')
+
+  if (/^-/.test(command)) {
+    const flags = command.split('').slice(1)
+
+    const coin1 = flags.includes('r')
+      ? coinData[coinData.ranks[parseInt(args.shift())]]
+      : coinData[args.shift()]
+    if (coin1 === undefined) return
+    console.log(flags)
+
+    if (flags.includes('v')) return postVerboseMessage(coin1)
+    else return postMessage(coin1, coinData['btc'])
+  }
 
   switch (command) {
     case 'help':
@@ -65,6 +85,8 @@ bot.on('message', (data) => {
     case 'show':
       showCoin(...args)
       break
+    default:
+      showCoin(command)
   }
 })
 
@@ -113,22 +135,72 @@ function coincap (str) {
 function postMessage (coin1, coin2, channel = defaultChannelName, params = defaultParams) {
   bot.postMessageToChannel(channel,
     `\
+*#${coin1.rank}* \
 :${/xrp/i.test(coin1.short) ? 'hankey' : coin1.short}: \
 *${formatter.format(coin1.price)}* \
 :${coin2.short}: \
 *${coin1.short === coin2.short ? (1).toFixed(8) : (coin1.price / coin2.price).toFixed(8)}* \
 ${coin1.cap24hrChange >= 0 ? ':chart_with_upwards_trend:' : ':chart_with_downwards_trend:'} \
 *${coin1.cap24hrChange}%*\
-`,
-    params)
+`, params)
+}
+
+function postVerboseMessage (coin, channel = defaultChannelName, params = defaultParams) {
+  params = Object.assign({}, params, {
+    attachments: [
+      {
+        //"color": "#36a64f",
+        pretext: `${capitalize(coin.long)} (${coin.short.toUpperCase()}) [Rank #${coin.rank} @ coincap.io]`,
+        fields: [
+          {
+            title: 'Price',
+            value: formatter.format(coin.price),
+            short: true
+          },
+          {
+            title: 'Volume',
+            value: formatter.format(coin.volume),
+            short: true
+          },
+          {
+            title: '24hr Change',
+            value: `${/-/.test(coin.cap24hrChange) ? coin.cap24hrChange : '+' + coin.cap24hrChange}%`,
+            short: true
+          },
+          {
+            title: 'VWAP',
+            value: formatter.format(coin.vwapData),
+            short: true
+          },
+          {
+            title: 'Market Cap',
+            value: formatter.format(coin.mktcap),
+            short: true
+          },
+          {
+            title: 'Total Supply',
+            value: coin.supply,
+            short: true
+          }
+        ]
+      }
+    ]
+  })
+  bot.postMessageToChannel(channel, '', params)
+}
+
+function capitalize (str) {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
 }
 
 const coinData = {}
+coinData.ranks = []
 async function getFront () {
   return request(coincap('front'), { json: true })
     .then((coins) => {
       coins.forEach((coin, rank) => {
         updateCoinData(Object.assign(coin, { rank: rank + 1 }))
+        coinData.ranks[rank + 1] = coin.short.toLowerCase()
       })
     })
     .catch(err => { throw new Error(err) })
