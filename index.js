@@ -135,7 +135,7 @@ function coincap (str) {
 function postMessage (coin1, coin2, channel = defaultChannelName, params = defaultParams) {
   bot.postMessageToChannel(channel,
     `\
-*#${coin1.rank}* \
+*${coin1.short.toUpperCase()}* \
 :${/xrp/i.test(coin1.short) ? 'hankey' : coin1.short}: \
 *${formatter.format(coin1.price)}* \
 :${coin2.short}: \
@@ -151,7 +151,7 @@ function postVerboseMessage (coin, channel = defaultChannelName, params = defaul
     attachments: [
       {
         "color": loss ? '#ff0000' : '#00ff00',
-        pretext: `<http://coincap.io/${coin.short.toUpperCase()} | ${capitalize(coin.long)}> (${coin.short.toUpperCase()}) [Rank #${coin.rank} @ coincap.io]`,
+        pretext: `:${/xrp/i.test(coin.short) ? 'hankey' : coin.short}: <http://coincap.io/${coin.short.toUpperCase()} | ${capitalize(coin.long)}> (${coin.short.toUpperCase()}) [Rank #${coin.rank} @ coincap.io]`,
         fields: [
           {
             title: 'Price',
