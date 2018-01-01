@@ -65,6 +65,14 @@ bot.on('message', (data) => {
 
   if (/bee+s+h+/i.test(command)) return showCoin('bch')
 
+  if (/,/.test(command)) {
+    const coins = command.split(',')
+    coins.forEach(coin => {
+      showCoin(coin)
+    })
+    return
+  }
+
   if (/^-/.test(command)) {
     const flags = command.split('').slice(1)
 
