@@ -30,6 +30,7 @@ Here are the commands:
     coincap [coin]
     coincap show [coin, ex: btc, :btc:, bitcoin]
     coincap show [coin1] in [coin2]
+    coincap [coin1,coin2,coin3...coinN] (no spaces between coins)
     
 Flags:
     cc -v [coin]    verbose output
