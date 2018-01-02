@@ -40,7 +40,7 @@ Flags:
     
 Tables:
     cc top [limit] [sortBy]
-    *sortBy can be one of mktcap, price, supply, volume, gain, vwap,*
+    *sortBy can be one of mktcap, price, supply, volume, gain, vwap, btcgain,*
     *or a comma delimited list of valid sortBy values*
     
     examples:
@@ -154,7 +154,7 @@ function showCoin (...args) {
   }
 }
 
-const tables = ['mktcap', 'price', 'supply', 'volume', 'gain', 'vwap']
+const tables = ['mktcap', 'price', 'supply', 'volume', 'gain', 'vwap', 'btcgain']
 function showTable (...args) {
   const limit = isNaN(args[0]) ? 10 : parseInt(args.shift())
   const standard = args[0] === undefined
@@ -283,6 +283,7 @@ function normalize (data, field) {
     case 'vwap':
       return formatter.format(data)
     case 'gain':
+    case 'btcgain':
       return (+data).toFixed(2).toString() + ' %'
     case 'supply':
       return (+data).toLocaleString()
@@ -298,7 +299,8 @@ async function getFront () {
         updateCoinData(Object.assign({}, coin, {
           rank: rank + 1,
           gain: coin.perc,
-          vwap: coin.vwapData
+          vwap: coin.vwapData,
+          btcgain: /btc/i.test(coin.short) ? '-' : (coin.perc - coinData['btc'].perc)
         }))
         coinData.ranks[rank + 1] = coin.short.toLowerCase()
       })
