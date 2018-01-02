@@ -178,6 +178,9 @@ function showTable (...args) {
     }
   }
   table.setAlign(2, AsciiTable.RIGHT)
+  if (args[0] === undefined) {
+    table.setAlign(3, AsciiTable.RIGHT)
+  }
   bot.postMessageToChannel(defaultChannelName, `\`\`\`\n${table.toString()}\n\`\`\``, defaultParams)
 }
 
