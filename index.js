@@ -209,7 +209,7 @@ async function getFront () {
   return request(coincap('front'), { json: true })
     .then((coins) => {
       coins.forEach((coin, rank) => {
-        updateCoinData(Object.assign(coin, { rank: rank + 1 }))
+        updateCoinData(Object.assign({}, coin, { rank: rank + 1 }))
         coinData.ranks[rank + 1] = coin.short.toLowerCase()
       })
     })
@@ -243,4 +243,9 @@ getFront()
       }
       catch (e) { console.error(new Error(e)) }
     })
+
+    setInterval(async () => {
+      console.log('getting coincap front')
+      return await getFront()
+    }, 30000)
   })
