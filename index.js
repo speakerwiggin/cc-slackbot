@@ -6,6 +6,8 @@ const SlackBot = require('slackbots')
 const secrets = require('./secrets')
 const request = require('request-promise')
 const spark = require('textspark')
+const _ = require('lodash')
+const AsciiTable = require('ascii-table')
 const io = require('socket.io-client')
 const formatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -35,6 +37,16 @@ Here are the commands:
 Flags:
     cc -v [coin]    verbose output
     cc -r [rank]    get coin at specified rank
+    
+Tables:
+    cc top [limit] [sortBy]
+    *sortBy can be one of mktcap, price, supply, volume, gain, vwap*
+    
+    examples:
+        \`cc top\` // displays top 10 sorted by mktcap by default
+        \`cc top 5\` // top 5 sorted by mktcap
+        \`cc top gain\` // top 10 sorted by 24hr % gain
+        \`cc top 20 volume\` // top 20 sorted by volume
 `
 
 /**
@@ -94,6 +106,9 @@ bot.on('message', (data) => {
     case 'show':
       showCoin(...args)
       break
+    case 'top':
+      showTable(...args)
+      break
     default:
       showCoin(command)
   }
@@ -135,6 +150,23 @@ function showCoin (...args) {
     default:
       postMessage(coin1, coinData['btc'])
   }
+}
+
+function showTable (...args) {
+  const limit = isNaN(args[0]) ? 10 : parseInt(args.shift())
+  const sortBy = args[0] === undefined ? 'mktcap' : args[0]
+  const table = new AsciiTable()
+  table.setHeading('', 'coin', sortBy)
+
+  const sortedList = _.orderBy(coinData, sortBy, 'desc').slice(1).filter((coin, index, arr) => index === 0 ? true : coin.short !== arr[index - 1].short)
+  for (let i = 0; i < limit; i++) {
+    const coin = sortedList[i]
+    //const str = `<${coincap(coin.short)} | ${coin.short}>`
+    const str = normalize(coin[sortBy])
+    table.addRow(i + 1, coin.short, `${str + (sortBy === 'gain' ? ' %' : '')}`)
+  }
+  table.setAlign(2, AsciiTable.RIGHT)
+  bot.postMessageToChannel(defaultChannelName, `\`\`\`\n${table.toString()}\n\`\`\``, defaultParams)
 }
 
 function coincap (str) {
@@ -203,13 +235,23 @@ function capitalize (str) {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
 }
 
+function normalize (data) {
+  if (isNaN(data)) return data
+  data = data.toString()
+  return (+data).toFixed(2).toString()
+}
+
 const coinData = {}
 coinData.ranks = []
 async function getFront () {
   return request(coincap('front'), { json: true })
     .then((coins) => {
       coins.forEach((coin, rank) => {
-        updateCoinData(Object.assign({}, coin, { rank: rank + 1 }))
+        updateCoinData(Object.assign({}, coin, {
+          rank: rank + 1,
+          gain: coin.perc,
+          vwap: coin.vwapData
+        }))
         coinData.ranks[rank + 1] = coin.short.toLowerCase()
       })
     })
