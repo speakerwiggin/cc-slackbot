@@ -112,7 +112,7 @@ bot.on('message', (data) => {
       showTable(...args)
       break
     default:
-      showCoin(command)
+      showCoin(command, ...args)
   }
 })
 
