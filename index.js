@@ -300,7 +300,7 @@ async function getFront () {
           rank: rank + 1,
           gain: coin.perc,
           vwap: coin.vwapData,
-          btcgain: /btc/i.test(coin.short) ? '-' : (coin.perc - coinData['btc'].perc)
+          btcgain: coin.short.toLowerCase() === 'btc' ? 'N/A' : (coin.perc - coinData['btc'].perc)
         }))
         coinData.ranks[rank + 1] = coin.short.toLowerCase()
       })
