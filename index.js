@@ -152,18 +152,30 @@ function showCoin (...args) {
   }
 }
 
+const tables = ['mktcap', 'price', 'supply', 'volume', 'gain', 'vwap']
 function showTable (...args) {
   const limit = isNaN(args[0]) ? 10 : parseInt(args.shift())
   const sortBy = args[0] === undefined ? 'mktcap' : args[0]
+  if (!tables.includes(sortBy)) return
   const table = new AsciiTable()
-  table.setHeading('', 'coin', sortBy)
+  if (args[0] === undefined) {
+    table.setHeading('', 'coin', 'price', sortBy)
+  }
+  else {
+    table.setHeading('', 'coin', sortBy)
+  }
 
   const sortedList = _.orderBy(coinData, sortBy, 'desc').slice(1).filter((coin, index, arr) => index === 0 ? true : coin.short !== arr[index - 1].short)
   for (let i = 0; i < limit; i++) {
     const coin = sortedList[i]
     //const str = `<${coincap(coin.short)} | ${coin.short}>`
-    const str = normalize(coin[sortBy])
-    table.addRow(i + 1, coin.short, `${str + (sortBy === 'gain' ? ' %' : '')}`)
+    const str = normalize(coin[sortBy], sortBy)
+    if (args[0] === undefined) {
+      table.addRow(i + 1, coin.short, normalize(coin.price, 'price'), str)
+    }
+    else {
+      table.addRow(i + 1, coin.short, str)
+    }
   }
   table.setAlign(2, AsciiTable.RIGHT)
   bot.postMessageToChannel(defaultChannelName, `\`\`\`\n${table.toString()}\n\`\`\``, defaultParams)
@@ -235,10 +247,20 @@ function capitalize (str) {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
 }
 
-function normalize (data) {
+function normalize (data, field) {
   if (isNaN(data)) return data
   data = data.toString()
-  return (+data).toFixed(2).toString()
+  switch (field) {
+    case 'mktcap':
+    case 'price':
+    case 'volume':
+    case 'vwap':
+      return formatter.format(data)
+    case 'gain':
+      return (+data).toFixed(2).toString() + ' %'
+    case 'supply':
+      return (+data).toLocaleString()
+  }
 }
 
 const coinData = {}
