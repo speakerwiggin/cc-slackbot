@@ -40,13 +40,15 @@ Flags:
     
 Tables:
     cc top [limit] [sortBy]
-    *sortBy can be one of mktcap, price, supply, volume, gain, vwap*
+    *sortBy can be one of mktcap, price, supply, volume, gain, vwap,*
+    *or a comma delimited list of valid sortBy values*
     
     examples:
         \`cc top\` // displays top 10 sorted by mktcap by default
         \`cc top 5\` // top 5 sorted by mktcap
         \`cc top gain\` // top 10 sorted by 24hr % gain
         \`cc top 20 volume\` // top 20 sorted by volume
+        \`cc top volume,mktcap,gain\` // top 10 sorted by volume and including mktcap & gain columns
 `
 
 /**
@@ -155,31 +157,52 @@ function showCoin (...args) {
 const tables = ['mktcap', 'price', 'supply', 'volume', 'gain', 'vwap']
 function showTable (...args) {
   const limit = isNaN(args[0]) ? 10 : parseInt(args.shift())
-  const sortBy = args[0] === undefined ? 'mktcap' : args[0]
-  if (!tables.includes(sortBy)) return
+  const standard = args[0] === undefined
+  const sortBy = standard ? 'mktcap' : args[0]
+  const fields = _.intersection(sortBy.split(','), tables)
+  if (fields.length === 0) return
+
   const table = new AsciiTable()
-  if (args[0] === undefined) {
+  if (fields.length > 1) {
+    table.setHeading('', 'coin', ...fields)
+  }
+  else if (standard) {
     table.setHeading('', 'coin', 'price', sortBy)
   }
   else {
     table.setHeading('', 'coin', sortBy)
   }
 
-  const sortedList = _.orderBy(coinData, sortBy, 'desc').slice(1).filter((coin, index, arr) => index === 0 ? true : coin.short !== arr[index - 1].short)
+  const sortedList = _.orderBy(coinData, fields[0], 'desc').slice(1).filter((coin, index, arr) => index === 0 ? true : coin.short !== arr[index - 1].short)
+
   for (let i = 0; i < limit; i++) {
     const coin = sortedList[i]
-    //const str = `<${coincap(coin.short)} | ${coin.short}>`
     const str = normalize(coin[sortBy], sortBy)
-    if (args[0] === undefined) {
+    if (fields.length > 1) {
+      const values = fields.map(field => {
+        return normalize(coin[field], field)
+      })
+      table.addRow(i + 1, coin.short, ...values)
+    }
+    else if (standard) {
       table.addRow(i + 1, coin.short, normalize(coin.price, 'price'), str)
     }
     else {
       table.addRow(i + 1, coin.short, str)
     }
   }
-  table.setAlign(2, AsciiTable.RIGHT)
-  if (args[0] === undefined) {
+
+  if (fields.length > 1) {
+    for (let i = 2; i < fields.length + 2; i++) {
+      table.setAlign(i, AsciiTable.RIGHT)
+    }
+  }
+  else if (standard) {
+    table.setAlign(2, AsciiTable.RIGHT)
     table.setAlign(3, AsciiTable.RIGHT)
+  }
+  else {
+    table.setAlign(2, AsciiTable.RIGHT)
   }
   bot.postMessageToChannel(defaultChannelName, `\`\`\`\n${table.toString()}\n\`\`\``, defaultParams)
 }
