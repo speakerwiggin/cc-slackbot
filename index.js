@@ -29,9 +29,8 @@ const defaultParams = {
 const commands = `*All commands can be started with either \`coincap\` or \`cc\`*
 Here are the commands:   
     coincap help
-    coincap [coin]
-    coincap show [coin, ex: btc, :btc:, bitcoin]
-    coincap show [coin1] in [coin2]
+    coincap [coin, ex: btc, :btc:, bitcoin]
+    coincap [coin1] in [coin2]
     coincap [coin1,coin2,coin3...coinN] (no spaces between coins)
     
 Flags:
@@ -105,9 +104,6 @@ bot.on('message', (data) => {
     case 'help':
       sendHelp()
       break
-    case 'show':
-      showCoin(...args)
-      break
     case 'top':
       showTable(...args)
       break
@@ -147,7 +143,7 @@ function showCoin (...args) {
     case 'in':
       const coin2 = coinData[args[1]]
       if (coin2 === undefined) return
-      postMessage(coin1, coin2)
+      postMessage(coin1, coin2, true)
       break
     default:
       postMessage(coin1, coinData['btc'])
@@ -211,7 +207,8 @@ function coincap (str) {
   return `http://coincap.io/${str}`
 }
 
-function postMessage (coin1, coin2, channel = defaultChannelName, params = defaultParams) {
+function postMessage (coin1, coin2, flagged = false, channel = defaultChannelName, params = defaultParams) {
+  const diff = flagged ? (coin1.perc - coin2.perc).toFixed(2) : coin1.cap24hrChange
   bot.postMessageToChannel(channel,
     `\
 *${coin1.short.toUpperCase()}* \
@@ -219,8 +216,8 @@ function postMessage (coin1, coin2, channel = defaultChannelName, params = defau
 *${formatter.format(coin1.price)}* \
 :${coin2.short}: \
 *${coin1.short === coin2.short ? (1).toFixed(8) : (coin1.price / coin2.price).toFixed(8)}* \
-${coin1.cap24hrChange >= 0 ? ':chart_with_upwards_trend:' : ':chart_with_downwards_trend:'} \
-*${coin1.cap24hrChange}%*\
+${diff >= 0 ? ':chart_with_upwards_trend:' : ':chart_with_downwards_trend:'} \
+*${diff}%*\
 `, params)
 }
 
