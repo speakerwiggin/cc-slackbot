@@ -221,9 +221,9 @@ function showTable (...args) {
 
 const times = ['1', '7', '30', '90', '180', '365']
 async function showChart (...args) {
-  const standard = (isNaN(args[0]) || !times.includes(args[0]))
-  const timePeriod = standard ? 1 : parseInt(args.shift())
-  if (standard && args.length !== 1) args.shift()
+  if (args.length > 2) return
+  if (args.length !== 1 && !times.includes(args[0])) return
+  const timePeriod = args.length === 1 ? 1 : parseInt(args.shift())
   const coin = coinData[args[0]]
   if (coin === undefined) return
 
