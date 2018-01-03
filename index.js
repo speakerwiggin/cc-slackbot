@@ -5,9 +5,10 @@
 const SlackBot = require('slackbots')
 const secrets = require('./secrets')
 const request = require('request-promise')
-const spark = require('textspark')
 const _ = require('lodash')
 const AsciiTable = require('ascii-table')
+const fs = require('fs')
+const jsdom = require('jsdom/lib/old-api').jsdom
 const io = require('socket.io-client')
 const formatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -39,7 +40,7 @@ Flags:
     
 Tables:
     cc top [limit] [sortBy]
-    *sortBy can be one of mktcap, price, supply, volume, gain, vwap, btcgain,*
+    *sortBy can be one of: mktcap, price, supply, volume, gain, vwap, btcgain,*
     *or a comma delimited list of valid sortBy values*
     
     examples:
@@ -48,6 +49,18 @@ Tables:
         \`cc top gain\` // top 10 sorted by 24hr % gain
         \`cc top 20 volume\` // top 20 sorted by volume
         \`cc top volume,mktcap,gain\` // top 10 sorted by volume and including mktcap & gain columns
+        
+Charts:
+    cc chart [timePeriod] [coin]
+    *timePeriod can be one of: 1, 7, 30, 90, 180, 365*
+    *timePeriod defaults to 1 if not given*
+    
+    _Note: this command takes a few seconds longer than others,_
+    _due to rendering a new chart each time. Please be patient._
+    
+    examples:
+        \`cc chart btc\` // displays a 1day history chart for btc price
+        \`cc chart 7 btc\` // displays a 7day history chart for btc price
 `
 
 /**
@@ -82,7 +95,7 @@ bot.on('message', (data) => {
   if (/,/.test(command)) {
     const coins = command.split(',')
     coins.forEach(coin => {
-      showCoin(coin)
+      showCoin(coin, ...args)
     })
     return
   }
@@ -106,6 +119,9 @@ bot.on('message', (data) => {
       break
     case 'top':
       showTable(...args)
+      break
+    case 'chart':
+      showChart(...args).catch(err => console.error(new Error(err)))
       break
     default:
       showCoin(command, ...args)
@@ -201,6 +217,51 @@ function showTable (...args) {
     table.setAlign(2, AsciiTable.RIGHT)
   }
   bot.postMessageToChannel(defaultChannelName, `\`\`\`\n${table.toString()}\n\`\`\``, defaultParams)
+}
+
+const times = ['1', '7', '30', '90', '180', '365']
+async function showChart (...args) {
+  const standard = (isNaN(args[0]) || !times.includes(args[0]))
+  const timePeriod = standard ? 1 : parseInt(args.shift())
+  if (standard && args.length !== 1) args.shift()
+  const coin = coinData[args[0]]
+  if (coin === undefined) return
+
+  const history = await request(coincap(`history/${timePeriod}day/${coin.short}`), { json: true }).catch(err => console.error(new Error(err)))
+  const priceData = history.price.map(val => {
+    return {
+      x: val[0],
+      value: val[1]
+    }
+  })
+
+  const document = jsdom('<body><div id="container"></div></body>')
+  const window = document.defaultView
+
+  const anychart = require('anychart')(window)
+  const anychartExport = require('anychart-nodejs')(anychart)
+
+  const chart = anychart.line()
+  chart.line(priceData)
+  chart.bounds(0, 0, 800, 500)
+  chart.container('container')
+  chart.draw()
+
+  const image = await anychartExport.exportTo(chart, 'jpg')
+  fs.writeFileSync('pic.jpg', image)
+
+  const options = {
+    method: 'POST',
+    url: 'https://slack.com/api/files.upload',
+    formData: {
+      token: secrets.token,
+      channels: secrets.channelName,
+      file: fs.createReadStream(__dirname + '/pic.jpg'),
+      filename: `${Date.now()}.jpg`,
+      filetype: 'jpg'
+    }
+  }
+  return request(options).catch(err => console.error(new Error(err)))
 }
 
 function coincap (str) {
