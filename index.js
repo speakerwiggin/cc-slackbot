@@ -11,6 +11,7 @@ const fs = require('fs')
 const jsdom = require('jsdom/lib/old-api').jsdom
 const io = require('socket.io-client')
 const formatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const formatterLong = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 4 })
 
 // create a bot
 const bot = new SlackBot({
@@ -122,6 +123,9 @@ bot.on('message', (data) => {
       break
     case 'chart':
       showChart(...args).catch(err => console.error(new Error(err)))
+      break
+    case 'sean':
+      postSean()
       break
     default:
       showCoin(command, ...args)
@@ -274,12 +278,27 @@ function postMessage (coin1, coin2, flagged = false, channel = defaultChannelNam
     `\
 *${coin1.short.toUpperCase()}* \
 :${/xrp/i.test(coin1.short) ? 'hankey' : coin1.short}: \
-*${formatter.format(coin1.price)}* \
+*${coin1.price < 0.10 ? formatterLong.format(coin1.price) : formatter.format(coin1.price)}* \
 :${coin2.short}: \
 *${coin1.short === coin2.short ? (1).toFixed(8) : (coin1.price / coin2.price).toFixed(8)}* \
 ${diff >= 0 ? ':chart_with_upwards_trend:' : ':chart_with_downwards_trend:'} \
 *${diff}%*\
 `, params)
+}
+
+function postSean (channel = defaultChannelName, params = defaultParams) {
+  const options = {
+    method: 'POST',
+    url: 'https://slack.com/api/files.upload',
+    formData: {
+      token: secrets.token,
+      channels: secrets.channelName,
+      file: fs.createReadStream(__dirname + '/sean.png'),
+      filename: 'sean.png',
+      filetype: 'png'
+    }
+  }
+  return request(options).catch(err => console.error(new Error(err)))
 }
 
 function postVerboseMessage (coin, channel = defaultChannelName, params = defaultParams) {
@@ -292,7 +311,7 @@ function postVerboseMessage (coin, channel = defaultChannelName, params = defaul
         fields: [
           {
             title: 'Price',
-            value: formatter.format(coin.price),
+            value: coin.price < 0.10 ? formatterLong.format(coin.price) : formatter.format(coin.price),
             short: true
           },
           {
