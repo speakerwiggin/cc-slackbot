@@ -71,7 +71,7 @@ bot.on('start', () => {
   // define channel, where bot exists.
   // can be adjusted here: https://my.slack.com/services
 
-  bot.postMessageToChannel(defaultChannelName, 'Hello world!', defaultParams)
+  //bot.postMessageToChannel(defaultChannelName, 'Hello world!', defaultParams)
 })
 
 bot.on('message', (data) => {
@@ -125,7 +125,10 @@ bot.on('message', (data) => {
       showChart(...args).catch(err => console.error(new Error(err)))
       break
     case 'sean':
-      postSean()
+      postMeme('sean')
+      break
+    case 'rich':
+      postMeme('rich')
       break
     default:
       showCoin(command, ...args)
@@ -286,15 +289,15 @@ ${diff >= 0 ? ':chart_with_upwards_trend:' : ':chart_with_downwards_trend:'} \
 `, params)
 }
 
-function postSean (channel = defaultChannelName, params = defaultParams) {
+function postMeme (name, channel = defaultChannelName) {
   const options = {
     method: 'POST',
     url: 'https://slack.com/api/files.upload',
     formData: {
       token: secrets.token,
-      channels: secrets.channelName,
-      file: fs.createReadStream(__dirname + '/sean.png'),
-      filename: 'sean.png',
+      channels: channel,
+      file: fs.createReadStream(`${__dirname}/${name}.png`),
+      filename: `${name}.png`,
       filetype: 'png'
     }
   }
