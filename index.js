@@ -74,12 +74,27 @@ bot.on('start', () => {
   //bot.postMessageToChannel(defaultChannelName, 'Hello world!', defaultParams)
 })
 
+function random(arr) {
+  return arr[Math.floor(Math.random() * arr.length)]
+}
+
+function insult(id) {
+  const insults = [
+    `Wow <@${id}>, I'm crushed.`,
+    `:middle_finger: <@${id}>`,
+    `<@${id}> we agreed not to see any other bots!`,
+    `Am I not good enough for you <@${id}>?`
+  ]
+
+  bot.postMessageToChannel(defaultChannelName, random(insults), defaultParams)
+}
+
 bot.on('message', (data) => {
-  //console.log(data)
 
   trackDisconnect()
 
   if (!data || data.type !== 'message' || data.channel !== defaultChannel || !data.user || !data.text) return
+  if (data.text.toLowerCase().startsWith('/coincap -o')) return insult(data.user)
 
   const regex = /:(\w+):/g
   data.text = data.text.replace(regex, '$1')
