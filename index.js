@@ -71,14 +71,14 @@ bot.on('start', () => {
   // define channel, where bot exists.
   // can be adjusted here: https://my.slack.com/services
 
-  //bot.postMessageToChannel(defaultChannelName, 'Hello world!', defaultParams)
+  bot.postMessage(defaultChannelName, 'Hello world!', defaultParams)
 })
 
 function random(arr) {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
-function insult(id) {
+function insult(channel, id) {
   const insults = [
     `Wow <@${id}>, I'm crushed.`,
     `:middle_finger: <@${id}>`,
@@ -86,15 +86,20 @@ function insult(id) {
     `Am I not good enough for you <@${id}>?`
   ]
 
-  bot.postMessageToChannel(defaultChannelName, random(insults), defaultParams)
+  bot.postMessage(channel, random(insults), defaultParams)
 }
 
 bot.on('message', (data) => {
 
   trackDisconnect()
 
-  if (!data || data.type !== 'message' || data.channel !== defaultChannel || !data.user || !data.text) return
-  if (data.text.toLowerCase().startsWith('/coincap -o')) return insult(data.user)
+  if (!data || data.type !== 'message' || !data.user || !data.text) return
+
+  if (data.channel !== defaultChannel && !/^D/.test(data.channel)) return
+
+  const channel = data.channel
+
+  if (data.text.toLowerCase().startsWith('/coincap -o')) return insult(channel, data.user)
 
   const regex = /:(\w+):/g
   data.text = data.text.replace(regex, '$1')
@@ -106,12 +111,12 @@ bot.on('message', (data) => {
   if (arg1 !== 'coincap' && arg1 !== 'cc') return
   console.log(args)
 
-  if (/bee+s+h+/i.test(command)) return showCoin('bch')
+  if (/bee+s+h+/i.test(command)) return showCoin(channel, 'bch')
 
   if (/,/.test(command)) {
     const coins = command.split(',')
     coins.forEach(coin => {
-      showCoin(coin, ...args)
+      showCoin(channel, coin, ...args)
     })
     return
   }
@@ -125,28 +130,28 @@ bot.on('message', (data) => {
     if (coin1 === undefined) return
     console.log(flags)
 
-    if (flags.includes('v')) return postVerboseMessage(coin1)
-    else return postMessage(coin1, coinData['btc'])
+    if (flags.includes('v')) return postVerboseMessage(coin1, channel)
+    else return postMessage(channel, coin1, coinData['btc'])
   }
 
   switch (command) {
     case 'help':
-      sendHelp()
+      sendHelp(channel)
       break
     case 'top':
-      showTable(...args)
+      showTable(channel, ...args)
       break
     case 'chart':
-      showChart(...args).catch(err => console.error(new Error(err)))
+      showChart(channel, ...args).catch(err => console.error(new Error(err)))
       break
     case 'sean':
-      postMeme('sean')
+      postMeme('sean', channel)
       break
     case 'rich':
-      postMeme('rich')
+      postMeme('rich', channel)
       break
     default:
-      showCoin(command, ...args)
+      showCoin(channel, command, ...args)
   }
 })
 
@@ -169,11 +174,11 @@ function trackDisconnect () {
   }, 60000)
 }
 
-function sendHelp () {
-  bot.postMessageToChannel(defaultChannelName, commands, defaultParams)
+function sendHelp (channel) {
+  bot.postMessage(channel, commands, defaultParams)
 }
 
-function showCoin (...args) {
+function showCoin (channel, ...args) {
   const coin1 = coinData[args.shift()]
   if (coin1 === undefined) return
 
@@ -181,15 +186,15 @@ function showCoin (...args) {
     case 'in':
       const coin2 = coinData[args[1]]
       if (coin2 === undefined) return
-      postMessage(coin1, coin2, true)
+      postMessage(coin1, coin2, true, channel)
       break
     default:
-      postMessage(coin1, coinData['btc'])
+      postMessage(coin1, coinData['btc'], false, channel)
   }
 }
 
 const tables = ['mktcap', 'price', 'supply', 'volume', 'gain', 'vwap', 'btcgain']
-function showTable (...args) {
+function showTable (channel, ...args) {
   const limit = isNaN(args[0]) ? 10 : parseInt(args.shift())
   const standard = args[0] === undefined
   const sortBy = standard ? 'mktcap' : args[0]
@@ -238,11 +243,11 @@ function showTable (...args) {
   else {
     table.setAlign(2, AsciiTable.RIGHT)
   }
-  bot.postMessageToChannel(defaultChannelName, `\`\`\`\n${table.toString()}\n\`\`\``, defaultParams)
+  bot.postMessage(channel, `\`\`\`\n${table.toString()}\n\`\`\``, defaultParams)
 }
 
 const times = ['1', '7', '30', '90', '180', '365']
-async function showChart (...args) {
+async function showChart (channel, ...args) {
   if (args.length > 2) return
   if (args.length !== 1 && !times.includes(args[0])) return
   const timePeriod = args.length === 1 ? 1 : parseInt(args.shift())
@@ -277,7 +282,7 @@ async function showChart (...args) {
     url: 'https://slack.com/api/files.upload',
     formData: {
       token: secrets.token,
-      channels: secrets.channelName,
+      channels: channel,
       file: fs.createReadStream(__dirname + '/pic.jpg'),
       filename: `${Date.now()}.jpg`,
       filetype: 'jpg'
@@ -292,7 +297,7 @@ function coincap (str) {
 
 function postMessage (coin1, coin2, flagged = false, channel = defaultChannelName, params = defaultParams) {
   const diff = flagged ? (coin1.perc - coin2.perc).toFixed(2) : coin1.cap24hrChange
-  bot.postMessageToChannel(channel,
+  bot.postMessage(channel,
     `\
 *${coin1.short.toUpperCase()}* \
 :${/xrp/i.test(coin1.short) ? 'hankey' : coin1.short}: \
@@ -361,7 +366,7 @@ function postVerboseMessage (coin, channel = defaultChannelName, params = defaul
       }
     ]
   })
-  bot.postMessageToChannel(channel, '', params)
+  bot.postMessage(channel, '', params)
 }
 
 function capitalize (str) {
