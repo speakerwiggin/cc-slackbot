@@ -13,6 +13,8 @@ const io = require('socket.io-client')
 const formatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 const formatterLong = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 4 })
 
+const prismCoins = 'btc,xrp,bch,ltc,xmr,dash,xem,etc,lsk,zec,steem,bcn,strat,sc,bts,doge,rep,dcr,ardr,dgb,gnt,fct,sys,nav,ppc,xcp,lbc,burst,nmc,pot,blk,grc,omni,exp,rads,clam,nxc,bcy,xbc'
+
 // create a bot
 const bot = new SlackBot({
   token: secrets.token, // Add a bot https://my.slack.com/services/new/bot and put the token
@@ -107,7 +109,7 @@ bot.on('message', (data) => {
   const regex = /:(\w+):/g
   data.text = data.text.replace(regex, '$1')
 
-  const args = data.text.toLowerCase().split(/\s+/)
+  let args = data.text.toLowerCase().split(/\s+/)
   const arg1 = (args.shift() || '').toLowerCase()
   let command = (args.shift() || '').toLowerCase()
 
@@ -115,6 +117,10 @@ bot.on('message', (data) => {
   console.log(args)
 
   if (command === 'solt') command = 'salt'
+  else if (command === 'prism') {
+    command = prismCoins
+    args = ['in', 'eth']
+  }
   if (/bee+s+h+/i.test(command)) return showCoin(channel, 'bch')
 
   if (/,/.test(command)) {
