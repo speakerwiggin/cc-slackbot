@@ -109,11 +109,12 @@ bot.on('message', (data) => {
 
   const args = data.text.toLowerCase().split(/\s+/)
   const arg1 = (args.shift() || '').toLowerCase()
-  const command = (args.shift() || '').toLowerCase()
+  let command = (args.shift() || '').toLowerCase()
 
-  if (arg1 !== 'coincap' && arg1 !== 'cc') return
+  if (arg1 !== 'coincap' && arg1 !== 'cc' && arg1 !== 'wen' && arg1 !== 'when') return
   console.log(args)
 
+  if (command === 'solt') command = 'salt'
   if (/bee+s+h+/i.test(command)) return showCoin(channel, 'bch')
 
   if (/,/.test(command)) {
@@ -152,6 +153,12 @@ bot.on('message', (data) => {
       break
     case 'rich':
       postMeme('rich', channel)
+      break
+    case 'genius':
+      postMeme('genius', channel)
+      break
+    case 'chase':
+      postMeme('chase', channel)
       break
     default:
       showCoin(channel, command, ...args)
@@ -307,7 +314,7 @@ function postMessage (coin1, coin2, flagged = false, channel = defaultChannelNam
 *${coin1.price < 0.10 ? formatterLong.format(coin1.price) : formatter.format(coin1.price)}* \
 :${coin2.short}: \
 *${coin1.short === coin2.short ? (1).toFixed(8) : (coin1.price / coin2.price).toFixed(8)}* \
-${diff >= 0 ? ':chart_with_upwards_trend:' : ':chart_with_downwards_trend:'} \
+${diff >= 50 ? ':moon:' : diff >= 20 ? ':rocket:' : diff >= 0 ? ':chart_with_upwards_trend:' : diff <= -50 ? ':this_is_fine:' : diff <= -20 ? ':rekt:' : ':chart_with_downwards_trend:'} \
 *${diff}%*\
 `, params)
 }
