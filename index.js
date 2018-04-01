@@ -71,8 +71,11 @@ bot.on('start', () => {
   // define channel, where bot exists.
   // can be adjusted here: https://my.slack.com/services
 
-  bot.postMessage(defaultChannelName, 'Hello world!', defaultParams)
+  //bot.postMessage(defaultChannelName, 'Hello world!', defaultParams)
 })
+
+bot.on('error', err => { throw new Error(err) })
+bot.on('close', () => { throw new Error('bot closed') })
 
 function random(arr) {
   return arr[Math.floor(Math.random() * arr.length)]
