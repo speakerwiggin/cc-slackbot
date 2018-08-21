@@ -1,4 +1,6 @@
 # cc-slackbot
+
+
 [![Waffle.io - Columns and their card count](https://badge.waffle.io/speakerwiggin/cc-slackbot.svg?columns=all)](https://waffle.io/speakerwiggin/cc-slackbot)
 
 
